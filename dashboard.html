@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mistake Tracker</title>
+<style>
+  :root { --bg:#f7f8fa; --fg:#1b2430; --muted:#5d6b7a; --line:#d9dee5; --accent:#1f6feb; --bar:#e0a526; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#10161d; --fg:#e8edf3; --muted:#93a1b1; --line:#26313d; --accent:#58a6ff; --bar:#e3b341; }
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg); font:16px/1.5 Georgia, "Times New Roman", serif; }
+  main { max-width:880px; margin:0 auto; padding:32px 20px 64px; }
+  h1 { font-size:2rem; margin:0 0 4px; }
+  p.sub { margin:0 0 28px; color:var(--muted); }
+  .top { display:flex; flex-wrap:wrap; gap:32px; align-items:flex-end; border-bottom:1px solid var(--line); padding-bottom:24px; }
+  .score { font-size:5rem; line-height:1; font-weight:700; color:var(--accent); }
+  .meta div { color:var(--muted); }
+  .meta strong { color:var(--fg); }
+  h2 { font-size:1.15rem; margin:32px 0 12px; }
+  .chart { display:flex; align-items:flex-end; gap:6px; height:140px; border-bottom:1px solid var(--line); }
+  .chart div { flex:1; background:var(--bar); min-height:2px; position:relative; }
+  .chart div:hover::after { content:attr(data-tip); position:absolute; bottom:100%; left:50%; transform:translateX(-50%);
+    background:var(--fg); color:var(--bg); padding:2px 6px; font-size:.75rem; white-space:nowrap; }
+  table { width:100%; border-collapse:collapse; }
+  td, th { text-align:left; padding:8px 4px; border-bottom:1px solid var(--line); }
+  th { color:var(--muted); font-weight:normal; }
+  td.n { text-align:right; font-variant-numeric:tabular-nums; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Mistake Tracker</h1>
+  <p class="sub">Your most common coding mistakes, and whether you are making fewer of them.</p>
+  <section class="top">
+    <div><div class="score" id="score">--</div><div class="sub" style="margin:0">score out of 100</div></div>
+    <div class="meta">
+      <div>Status: <strong id="status">Loading...</strong></div>
+      <div>Total mistakes logged: <strong id="total">0</strong></div>
+      <div>Mistakes per 100 lines: <strong id="week">0</strong> this week, <strong id="last">0</strong> last week</div>
+    </div>
+  </section>
+  <h2>Mistakes per 100 lines, last 14 days</h2>
+  <div class="chart" id="chart" role="img" aria-label="Daily mistake density for the last 14 days"></div>
+  <h2>Most repeated mistakes</h2>
+  <table><thead><tr><th>Mistake</th><th class="n">Times</th></tr></thead><tbody id="rules"></tbody></table>
+</main>
+<script>
+const LABELS = {syntax_error:"Syntax error", bare_except:"Bare except", mutable_default:"Mutable default argument",
+  none_compare:"Comparing to None with ==", unused_import:"Unused import", builtin_shadow:"Shadowing a built-in",
+  long_function:"Function too long"};
+async function load() {
+  const s = await (await fetch("/api/stats")).json();
+  document.getElementById("score").textContent = s.score ?? "--";
+  document.getElementById("status").textContent = s.status;
+  document.getElementById("total").textContent = s.total_mistakes;
+  document.getElementById("week").textContent = s.this_week;
+  document.getElementById("last").textContent = s.last_week;
+  const max = Math.max(1, ...s.daily.map(d => d.per100));
+  document.getElementById("chart").innerHTML = s.daily.map(d =>
+    `<div style="height:${(d.per100 / max) * 100}%" data-tip="${d.day}: ${d.per100}"></div>`).join("");
+  document.getElementById("rules").innerHTML = s.by_rule.length
+    ? s.by_rule.map(r => `<tr><td>${LABELS[r.rule] || r.rule}</td><td class="n">${r.count}</td></tr>`).join("")
+    : `<tr><td colspan="2">Nothing yet. Save a Python file in VS Code to start tracking.</td></tr>`;
+}
+load(); setInterval(load, 10000);
+</script>
+</body>
+</html>

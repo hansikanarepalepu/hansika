@@ -1,0 +1,21 @@
+{
+  "name": "mistake-tracker",
+  "displayName": "Mistake Tracker",
+  "description": "Flags common Python mistakes when you save, counts repeats, and tracks your improvement.",
+  "version": "0.1.0",
+  "license": "MIT",
+  "publisher": "mistake-tracker",
+  "engines": { "vscode": "^1.80.0" },
+  "activationEvents": ["onLanguage:python"],
+  "main": "./extension.js",
+  "contributes": {
+    "commands": [{ "command": "mistakeTracker.openDashboard", "title": "Mistake Tracker: Open Dashboard" }],
+    "configuration": {
+      "title": "Mistake Tracker",
+      "properties": {
+        "mistakeTracker.pythonPath": { "type": "string", "default": "python3", "description": "Python executable." },
+        "mistakeTracker.dashboardUrl": { "type": "string", "default": "http://127.0.0.1:5000", "description": "Dashboard URL." }
+      }
+    }
+  }
+}
